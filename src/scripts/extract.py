@@ -6,9 +6,7 @@ from pathlib import Path
 def extrair_dados(path_origem: str, path_destino: str):
 
     if not Path(path_origem).exists():
-        raise FileNotFoundError(
-            f"O arquivo de origem '{path_origem}' não foi encontrado."
-        )
+        raise FileNotFoundError(f"O arquivo de origem '{path_origem}' não foi encontrado.")
 
     Path(path_destino).parent.mkdir(parents=True, exist_ok=True)
 

@@ -26,21 +26,21 @@ def schema():
                 ),
             ),
             "conta": pa.Column(pa.String, nullable=False),
-            "funcao_codigo": pa.Column(
+            "cod_funcao": pa.Column(
                 pa.String,
                 nullable=True,
                 checks=pa.Check.str_matches(r"^\d{2}$"),
                 coerce=True,  # Converte automaticamente para string se o pandas ler como número
             ),
-            "funcao_nome": pa.Column(pa.String, nullable=True),
-            "subfuncao_codigo": pa.Column(
+            "nome_funcao": pa.Column(pa.String, nullable=True),
+            "cod_subfuncao": pa.Column(
                 pa.String,
                 nullable=True,
                 # Se houver subfunção, precisa seguir o padrão "XX.XXX"
                 checks=pa.Check.str_matches(r"^\d{2}\.\d{3}$"),
                 coerce=True,
             ),
-            "subfuncao_nome": pa.Column(pa.String, nullable=True),
+            "nome_subfuncao": pa.Column(pa.String, nullable=True),
             "identificador_conta": pa.Column(pa.String, nullable=False),
             "valor": pa.Column(
                 pa.Float,

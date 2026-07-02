@@ -25,7 +25,11 @@ def pipeline_principal():
 
     # 3. chama a função de validação do dataframe de entrada com pandera
     df = validar_dataframe(df)
-    print(f"DataFrame validado com sucesso! Total de linhas: {len(df)}")
+
+    # 4. salva o dataframe validado em path_dados_processados
+    paths.path_dados_processados.mkdir(parents=True, exist_ok=True)
+    caminho_final = paths.path_dados_processados / "finbra.parquet"
+    df.to_parquet(caminho_final, index=False)
 
 
 if __name__ == "__main__":

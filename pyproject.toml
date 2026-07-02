@@ -1,0 +1,3 @@
+[tool.ruff]
+# Define o tamanho máximo da linha antes de forçar a quebra (padrão é 88)
+line-length = 120

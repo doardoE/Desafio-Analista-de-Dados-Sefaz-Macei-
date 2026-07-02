@@ -1,6 +1,7 @@
 from src.config import paths
 from src.scripts.extract import extrair_dados
 from src.scripts.transform import transformar_dados_finbra
+from src.scripts.validate import validar_dataframe
 
 """
 Pipeline principal para preparar os dados para análise, ele
@@ -19,8 +20,12 @@ def pipeline_principal():
         caminho_destino_final = paths.path_dados_extraidos / subpasta_relativa / path_arquivo_zip.stem
         extrair_dados(str(path_arquivo_zip), str(caminho_destino_final))
 
+    # 2. junta todos os arquivos extraídos em um único dataframe
     df = transformar_dados_finbra()
-    print(df.head())
+
+    # 3. chama a função de validação do dataframe de entrada com pandera
+    df = validar_dataframe(df)
+    print(f"DataFrame validado com sucesso! Total de linhas: {len(df)}")
 
 
 if __name__ == "__main__":

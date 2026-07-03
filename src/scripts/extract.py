@@ -1,5 +1,8 @@
 import zipfile
 from pathlib import Path
+import logging
+
+logger = logging.getLogger("extract")
 
 
 # Função para extrair dados de um arquivo compactado e salvar em outro local.
@@ -15,4 +18,5 @@ def extrair_dados(path_origem: str, path_destino: str):
             zip_ref.extractall(Path(path_destino).parent)
 
     except Exception as e:
+        logger.error(f"Erro ao extrair dados do arquivo '{path_origem}'")
         raise RuntimeError(f"Erro ao extrair dados do arquivo '{path_origem}': {e}")

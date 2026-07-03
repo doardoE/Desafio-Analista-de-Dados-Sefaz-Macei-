@@ -1,5 +1,7 @@
 from dataclasses import dataclass
 from pathlib import Path
+import logging
+import sys
 
 
 @dataclass
@@ -74,3 +76,11 @@ class DataFrameConfig:
 
 
 df_config = DataFrameConfig()
+
+
+logging.basicConfig(
+    level=logging.DEBUG,
+    format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
+    datefmt="%Y-%m-%d %H:%M:%S",
+    handlers=[logging.FileHandler("application.log", mode="a", encoding="utf-8"), logging.StreamHandler(sys.stdout)],
+)

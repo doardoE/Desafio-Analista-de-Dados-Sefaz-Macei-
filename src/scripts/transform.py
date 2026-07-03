@@ -6,18 +6,17 @@ logger = logging.getLogger("transform")
 
 
 # função para transformar os dados do dataframe de entrada
-def transformar_dados_finbra() -> pd.DataFrame:
+def transformar_dados_finbra(list_path_arquivos: list) -> pd.DataFrame:
     logger.info("Iniciando a transformação dos dados extraídos...")
     if not paths.path_dados_extraidos.exists():
         raise ValueError("O caminho para os dados extraídos não existe.")
 
-    dados_extraidos = list(paths.path_dados_extraidos.rglob("*.csv"))
-    if not dados_extraidos:
+    if not list_path_arquivos:
         logger.warning("Nenhum arquivo CSV encontrado..")
         return pd.DataFrame()
 
     dfs = []
-    for path_arquivo_csv in dados_extraidos:
+    for path_arquivo_csv in list_path_arquivos:
         try:
             # pega o exercício do arquivo CSV, que está na primeira linha do arquivo
             with open(path_arquivo_csv, "r", encoding=df_config.encoding) as f:

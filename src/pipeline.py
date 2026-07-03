@@ -19,20 +19,21 @@ def pipeline_principal():
     logger.info("Iniciando pipeline principal...")
 
     # adiciona métricas para logs
-    total_arquivos_zip = len(list(paths.path_dados_compactos.rglob("*.zip")))
-    if total_arquivos_zip == 0:
+    list_path_compactos = list(paths.path_dados_compactos.rglob("*.zip"))
+    if len(list_path_compactos) == 0:
         logger.warning("Nenhum arquivo compactado encontrado em path_dados_compactos.")
         return
 
     # 1. percorre todos os arquivos compactados em path_dados_compactos e extrai para path_dados_extraidos
-    for path_arquivo_zip in paths.path_dados_compactos.rglob("*.zip"):
+    for path_arquivo_zip in list_path_compactos:
         subpasta_relativa = path_arquivo_zip.relative_to(paths.path_dados_compactos).parent
         caminho_destino_final = paths.path_dados_extraidos / subpasta_relativa / path_arquivo_zip.stem
         extrair_dados(str(path_arquivo_zip), str(caminho_destino_final))
     logger.info("Extração de dados concluída.")
 
     # 2. junta todos os arquivos extraídos em um único dataframe
-    df = transformar_dados_finbra()
+    list_path_extraidos = list(paths.path_dados_extraidos.rglob("*.csv"))
+    df = transformar_dados_finbra(list_path_extraidos)
     logger.info("Transformação de dados concluída.")
 
     # 3. chama a função de validação do dataframe de entrada com pandera
@@ -46,10 +47,9 @@ def pipeline_principal():
     logger.info("Salvamento de dados concluído.")
 
     # adiciona métricas para logs
-    len_csvs = len(list(paths.path_dados_extraidos.rglob("*.csv")))
     logger.info("Pipeline concluído com sucesso.")
-    logger.info(f"- Total de arquivos compactados encontrados: {total_arquivos_zip}")
-    logger.info(f"- Total de arquivos CSV extraídos: {len_csvs}")
+    logger.info(f"- Total de arquivos compactados encontrados: {len(list_path_compactos)}")
+    logger.info(f"- Total de arquivos CSV extraídos: {len(list_path_extraidos)}")
     logger.info(f"- Total de linhas no dataframe validado: {len(df)}")
 
 

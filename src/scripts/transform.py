@@ -6,9 +6,9 @@ logger = logging.getLogger("transform")
 
 
 # função para transformar os dados do dataframe de entrada
-def transformar_dados_finbra(list_path_arquivos: list) -> pd.DataFrame:
+def transformar_dados_finbra(list_path_arquivos: list, path_extraidos) -> pd.DataFrame:
     logger.info("Iniciando a transformação dos dados extraídos...")
-    if not paths.path_dados_extraidos.exists():
+    if not path_extraidos.exists():
         raise ValueError("O caminho para os dados extraídos não existe.")
 
     if not list_path_arquivos:

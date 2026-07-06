@@ -3,6 +3,8 @@ from src.config import paths
 from src.scripts.extract import extrair_dados
 from src.scripts.transform import transformar_dados_finbra
 from src.scripts.validate import validar_dataframe
+from src.deflacao.deflacao import cria_parquet_deflacionado
+import duckdb
 import logging
 
 """
@@ -10,7 +12,9 @@ Pipeline principal para preparar os dados para análise, ele
 -> 1. percorre todos os arquivos compactados em path_dados_compactos e extrai para path_dados_extraidos
 -> 2. junta todos os arquivos extraídos em um único dataframe
 -> 3. chama a função de validação do dataframe de entrada com pandera
--> 4. salva o dataframe validado em path_dados_validados
+-> 4. salva o dataframe validado em path_dados_validados (finbra.parquet)
+-> .. Faz deflação dos valores e salva um novo parquet (finbra_deflacionado.parquet)
+-> .. Cria uma view desses dados para utilizar nos notebooks python
 """
 
 logger = logging.getLogger("pipeline")
@@ -56,3 +60,9 @@ def pipeline_principal(path_compactos: Path, path_extraidos: Path, path_processa
 
 if __name__ == "__main__":
     pipeline_principal(paths.path_dados_compactos, paths.path_dados_extraidos, paths.path_dados_processados)
+
+    # adiciona após o pipeline principal a função de deflação dos dados e criação da view
+    cria_parquet_deflacionado(paths.dados, paths.dados_deflacionados)
+
+    con = duckdb.connect("dados.duckdb")
+    con.sql(f"CREATE OR REPLACE VIEW finbra AS SELECT * FROM '{paths.dados_deflacionados}';")

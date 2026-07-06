@@ -49,6 +49,8 @@ dados_extraidos/
 dados_processados/
 # *.parquet
 # saidas/
+*.duckdb
+*.duckdb.wal
 # ==========================================================================
 
 # --- Ambiente Virtual --------------------------------------------------

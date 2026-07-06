@@ -26,7 +26,7 @@ def cria_parquet_deflacionado(path_arquivo_dados_originais, path_arquivo_deflaci
                 SELECT
                     f.*,
                     f.valor AS valor_nominal,
-                    ROUND(f.valor * i.numero_indice, 2) AS valor_real
+                    ROUND(f.valor * i.deflacao, 2) AS valor_real
                 FROM "{path_arquivo_dados_originais}" f
                 LEFT JOIN tabela_inflacao i
                     ON f.ano_exercicio = i.ano

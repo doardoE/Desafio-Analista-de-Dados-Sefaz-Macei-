@@ -21,6 +21,14 @@ class Paths:
     def path_dados_processados(self) -> Path:
         return self._root / "dados_processados"
 
+    @property
+    def dados(self) -> Path:
+        return self._root / "dados_processados" / "finbra.parquet"
+
+    @property
+    def dados_deflacionados(self) -> Path:
+        return self._root / "dados_processados" / "finbra_deflacionado.parquet"
+
 
 paths = Paths()
 

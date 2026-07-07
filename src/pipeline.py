@@ -1,10 +1,9 @@
 from pathlib import Path
-from src.config import paths
+from src.config import paths, db
 from src.scripts.extract import extrair_dados
 from src.scripts.transform import transformar_dados_finbra
 from src.scripts.validate import validar_dataframe
 from src.deflacao.deflacao import cria_parquet_deflacionado
-import duckdb
 import logging
 
 """
@@ -59,10 +58,9 @@ def pipeline_principal(path_compactos: Path, path_extraidos: Path, path_processa
 
 
 if __name__ == "__main__":
-    pipeline_principal(paths.path_dados_compactos, paths.path_dados_extraidos, paths.path_dados_processados)
+    pipeline_principal(paths.path_lsdados_compactos, paths.path_dados_extraidos, paths.path_dados_processados)
 
     # adiciona após o pipeline principal a função de deflação dos dados e criação da view
     cria_parquet_deflacionado(paths.dados, paths.dados_deflacionados)
 
-    con = duckdb.connect("dados.duckdb")
-    con.sql(f"CREATE OR REPLACE VIEW finbra AS SELECT * FROM '{paths.dados_deflacionados}';")
+    db.con.sql(f"CREATE OR REPLACE VIEW finbra AS SELECT * FROM '{paths.dados_deflacionados}';")

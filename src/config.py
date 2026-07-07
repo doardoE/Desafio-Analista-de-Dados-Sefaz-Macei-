@@ -4,6 +4,7 @@ import logging
 import sys
 import seaborn as sns
 import matplotlib.pyplot as plt
+import duckdb
 
 
 @dataclass
@@ -30,6 +31,10 @@ class Paths:
     @property
     def dados_deflacionados(self) -> Path:
         return self._root / "dados_processados" / "finbra_deflacionado.parquet"
+
+    @property
+    def banco_dados(self) -> Path:
+        return self._root / "database.duckdb"
 
 
 paths = Paths()
@@ -124,3 +129,13 @@ def configurar_graficos() -> None:
             "legend.frameon": False,  # legenda sem moldura
         }
     )
+
+
+class ConexaoBanco:
+    def __init__(self):
+        self.con: duckdb.DuckDBPyConnection = duckdb.connect(
+            database=paths.banco_dados,
+        )
+
+
+db = ConexaoBanco()

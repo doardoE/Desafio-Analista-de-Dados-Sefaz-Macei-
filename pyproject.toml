@@ -1,6 +1,39 @@
+[project]
+name = "finbra-analise"
+version = "0.1.0"
+description = "Projeto de Análide dos dados do finbra."
+requires-python = ">=3.11"
+dependencies = [
+    "pandas",
+    "pandera",
+    "duckdb",
+    "sidrapy",
+    "pyarrow",
+    "sidrapy",
+    "pyarrow",
+    "matplotlib",
+    "seaborn",
+    "pytest",
+    "ruff",
+    "ipykernel",
+    "ipython"
+]
+
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+
+[tool.setuptools.packages.find]
+include = ["src*"]
+
+
 [tool.ruff]
 # Define o tamanho máximo da linha antes de forçar a quebra (padrão é 88)
 line-length = 120
+extend-include = ["*.ipynb"]
+
 
 [tool.pytest.ini_options]
 # Define raiz para importações nos arquivos de teste

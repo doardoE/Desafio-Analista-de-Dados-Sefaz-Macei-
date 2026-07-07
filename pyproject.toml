@@ -20,6 +20,15 @@ dependencies = [
 ]
 
 
+[project.optional-dependencies]
+test = [
+    "ruff",
+    "pytest",
+    "pyarrow",
+    "pandera",
+]
+
+
 [build-system]
 requires = ["setuptools>=68"]
 build-backend = "setuptools.build_meta"

@@ -1,4 +1,4 @@
-from src.config import df_config
+from src.config.DataFrameConfig import df_config
 import pandas as pd
 import logging
 

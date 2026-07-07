@@ -1,4 +1,4 @@
-from src.config import paths
+from src.config.Paths import paths
 from src.deflacao.ipca_utils import busca_numero_indice, deflacionar
 import duckdb
 import logging

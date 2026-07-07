@@ -1,10 +1,13 @@
 from pathlib import Path
-from src.config import paths, db
+from src.config.Paths import paths
+from src.config.ConexaoBanco import db
+from src.config.logs import configura_log
 from src.scripts.extract import extrair_dados
 from src.scripts.transform import transformar_dados_finbra
 from src.scripts.validate import validar_dataframe
 from src.deflacao.deflacao import cria_parquet_deflacionado
 import logging
+
 
 """
 Pipeline principal para preparar os dados para análise, ele
@@ -58,7 +61,8 @@ def pipeline_principal(path_compactos: Path, path_extraidos: Path, path_processa
 
 
 if __name__ == "__main__":
-    pipeline_principal(paths.path_lsdados_compactos, paths.path_dados_extraidos, paths.path_dados_processados)
+    configura_log()
+    pipeline_principal(paths.path_dados_compactos, paths.path_dados_extraidos, paths.path_dados_processados)
 
     # adiciona após o pipeline principal a função de deflação dos dados e criação da view
     cria_parquet_deflacionado(paths.dados, paths.dados_deflacionados)

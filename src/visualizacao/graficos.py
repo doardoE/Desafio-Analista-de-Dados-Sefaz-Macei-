@@ -2,7 +2,7 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 
 
-def plot_line_soma_valores_deflacionados_por_ano(df):
+def plotar_soma_valores_deflacionados_por_ano(df):
     # Convertendo para bilhões
     df["valor_nominal_bi"] = df["sum(valor_nominal)"] / 1e9
     df["valor_real_bi"] = df["sum(valor_real)"] / 1e9

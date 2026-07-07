@@ -35,7 +35,7 @@ def capitais_assiduas(con):
     """)
 
 
-def soma_valores_deflacionados_por_ano(con):
+def soma_valores_deflacionados_pagas_por_ano(con):
     return con.sql("""
         WITH anos_validos AS (
             SELECT ano_exercicio
@@ -47,28 +47,32 @@ def soma_valores_deflacionados_por_ano(con):
         SELECT ano_exercicio, SUM(valor_nominal), SUM(valor_real)
         FROM finbra
         WHERE ano_exercicio IN (SELECT ano_exercicio FROM anos_validos)
+        AND etapa_despesa = 'Despesas Pagas'
         GROUP BY ano_exercicio
     """)
 
 
-def frequencia_valor_municipio(con, mun: str):
-    return con.sql(f"""
-    SELECT 
-        ano_exercicio,
-        regexp_extract(instituicao, 'Prefeitura Municipal (?:de|do|da) (.*) - [A-Z]{2}', 1) AS municipio,
-        valor_real
-    FROM finbra
-    WHERE municipio = '{mun}' OR uf = '{mun}'
-""")
+def frequencia_categoria(con, coluna: str, top_n: int = 15):
+    """Retorna a contagem de frequência de uma coluna categórica específica,
+    Colunas recomendadas: 'etapa_despesa', 'nome_funcao', 'nome_subfuncao'"""
 
+    # Lista de colunas permitidas para evitar SQL Injection dinâmico
+    colunas_validas = ["etapa_despesa", "nome_funcao", "nome_subfuncao"]
+    if coluna not in colunas_validas:
+        raise ValueError(f"Coluna inválida. Escolha entre: {colunas_validas}")
 
-def frequencia_valor_ano(con, ano):
     return con.sql(f"""
-    SELECT valor_real
-    FROM finbra
-    WHERE ano_exercicio = '{ano}'
-""")
+        SELECT 
+            {coluna} AS categoria, 
+            COUNT(*) AS contagem,
+            ROUND(COUNT(*) * 100.0 / (SELECT COUNT(*) FROM finbra), 2) AS percentual
+        FROM finbra
+        WHERE {coluna} IS NOT NULL
+        GROUP BY {coluna}
+        ORDER BY contagem DESC
+        LIMIT {top_n};
+    """)
 
 
 if __name__ == "__main__":
-    con = duckdb.connect("dados.duckdb")
+    con = duckdb.connect("../dados.duckdb")

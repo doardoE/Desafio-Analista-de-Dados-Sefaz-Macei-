@@ -1,6 +1,3 @@
-import duckdb
-
-
 def tabela_completa(con):
     return con.sql("SELECT * FROM finbra;")
 
@@ -35,18 +32,25 @@ def capitais_assiduas(con):
     """)
 
 
+def anos_assiduos(con) -> list:
+    # .fetchall() extrai os dados direto do DuckDB como uma lista de tuplas: [(2020,), (2021,)]
+    resultados = con.sql("""
+        SELECT ano_exercicio
+        FROM finbra
+        GROUP BY ano_exercicio
+        HAVING COUNT(DISTINCT uf) = 26
+    """).fetchall()
+
+    # Usamos uma list comprehension para extrair o número de dentro da tupla e retornar uma lista limpa: [2020, 2021]
+    return [linha[0] for linha in resultados]
+
+
 def soma_valores_deflacionados_pagas_por_ano(con):
-    return con.sql("""
-        WITH anos_validos AS (
-            SELECT ano_exercicio
-            FROM finbra
-            GROUP BY ano_exercicio
-            HAVING COUNT(DISTINCT uf) = 26
-        )
-            
+    anos_validos = anos_assiduos(con)
+    return con.sql(f"""
         SELECT ano_exercicio, SUM(valor_nominal), SUM(valor_real)
         FROM finbra
-        WHERE ano_exercicio IN (SELECT ano_exercicio FROM anos_validos)
+        WHERE ano_exercicio IN {anos_validos}
         AND etapa_despesa = 'Despesas Pagas'
         GROUP BY ano_exercicio
     """)
@@ -54,7 +58,7 @@ def soma_valores_deflacionados_pagas_por_ano(con):
 
 def frequencia_categoria(con, coluna: str, top_n: int = 15):
     """Retorna a contagem de frequência de uma coluna categórica específica,
-    Colunas recomendadas: 'etapa_despesa', 'nome_funcao', 'nome_subfuncao'"""
+    Colunas recomendadas: 'etapa_despesa', 'nome_funcao', 'nome_subfuncao"""
 
     # Lista de colunas permitidas para evitar SQL Injection dinâmico
     colunas_validas = ["etapa_despesa", "nome_funcao", "nome_subfuncao"]
@@ -74,5 +78,35 @@ def frequencia_categoria(con, coluna: str, top_n: int = 15):
     """)
 
 
-if __name__ == "__main__":
-    con = duckdb.connect("../dados.duckdb")
+def soma_valores_por_etapas(con):
+    anos_validos = anos_assiduos(con)
+    return con.sql(f"""
+        SELECT
+            etapa_despesa,
+            ROUND(SUM(valor_real), 2) AS total_valor_real,
+            ROUND(SUM(valor_real) / 1000000, 2) AS total_valor_milhoes,
+            ROUND(SUM(valor_real) / SUM(populacao), 2) AS despesa_per_capita
+        FROM finbra
+        WHERE ano_exercicio IN {anos_validos}
+        GROUP BY etapa_despesa
+        ORDER BY despesa_per_capita DESC
+    """)
+
+
+""" despesas real e per-capta de funções por ano válido. """
+
+
+def funcoes_por_valor_ano(con):
+    return con.sql(f"""
+        SELECT
+            cod_funcao,
+            nome_funcao,
+            ROUND(SUM(valor_real) / SUM(populacao), 2) AS total_valor_per_capta,
+            ROUND(AVG(valor_real / populacao), 2) AS media_valor_per_capta,
+            FROM finbra
+            WHERE ano_exercicio IN {anos_assiduos(con)}
+            AND etapa_despesa = 'Despesas Pagas'
+            AND cod_funcao IS NOT NULL
+            GROUP BY cod_funcao, nome_funcao
+            ORDER BY media_valor_per_capta DESC
+    """)

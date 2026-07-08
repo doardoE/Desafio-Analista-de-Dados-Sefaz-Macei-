@@ -50,4 +50,29 @@ def tabela_com_taxa_execucao(con):
     """)
 
 
+def obter_dados_pagamento_vs_divida(con):
+    return con.sql("""
+        WITH acumulado_capital AS (
+            SELECT 
+                regexp_extract(instituicao, 'Prefeitura Municipal (?:de|do|da) (.*)', 1) AS municipio,
+                nome_funcao,
+                SUM(valor_empenhado) AS total_empenhado,
+                SUM(valor_pago) AS total_pago,
+                SUM(
+                   COALESCE(valor_restos_a_pagar_nao_processados, 0) +
+                   COALESCE(valor_restos_a_pagar_processados, 0)
+                ) AS total_restos
+            FROM dados_filtrados
+            GROUP BY municipio, nome_funcao
+        )
+        SELECT 
+            municipio,
+            nome_funcao,
+            CASE WHEN total_empenhado > 0 THEN total_pago / total_empenhado ELSE 0 END AS indice_pagamento,
+            CASE WHEN total_empenhado > 0 THEN total_restos / total_empenhado ELSE 0 END AS taxa_residual
+        FROM acumulado_capital
+        WHERE total_empenhado > 0;
+    """)
+
+
 tabela_filtrada(db.con).show()

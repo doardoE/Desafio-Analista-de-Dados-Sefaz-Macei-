@@ -16,7 +16,7 @@ def plotar_linha_taxa_execucao(df):
     for _, linha in df.iterrows():
         ax.text(
             x=linha["ano_exercicio"],
-            y=linha["taxa_execucao"] + 1.5,  # O "+ 1.5" serve para deslocar o texto um pouco acima da bolinha
+            y=linha["taxa_execucao"] + 0.5,  # O "+ 1.5" serve para deslocar o texto um pouco acima da bolinha
             s=f"{linha['taxa_execucao']:.1f}%",  # Formata o valor com 1 casa decimal e símbolo de %
             horizontalalignment="center",
             verticalalignment="bottom",

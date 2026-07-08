@@ -1,4 +1,3 @@
-from src.config.ConexaoBanco import db
 from src.query_exploratoria import anos_assiduos
 
 
@@ -108,4 +107,23 @@ def obter_dados_cultura_per_capita(con):
     return con.sql(query_final)
 
 
-tabela_filtrada(db.con).show()
+def obter_dados_subfuncoes_cultura(con):
+    return con.sql("""
+        WITH valores_subfuncao AS (
+            SELECT 
+                ano_exercicio,
+                nome_subfuncao,
+                SUM(COALESCE(valor_pago, 0)) AS valor_pago_subfuncao
+            FROM dados_filtrados
+            WHERE nome_funcao = 'Cultura'
+            GROUP BY ano_exercicio, nome_subfuncao
+        )
+        SELECT 
+            ano_exercicio,
+            nome_subfuncao,
+            valor_pago_subfuncao,
+            (valor_pago_subfuncao / SUM(valor_pago_subfuncao) OVER(PARTITION BY ano_exercicio)) * 100 AS participacao_percentual
+        FROM valores_subfuncao
+        WHERE valor_pago_subfuncao > 0
+        ORDER BY ano_exercicio, participacao_percentual DESC;
+    """)

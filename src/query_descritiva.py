@@ -75,4 +75,37 @@ def obter_dados_pagamento_vs_divida(con):
     """)
 
 
+def obter_dados_cultura_per_capita(con):
+    # calcula o gasto por habitante de cada cidade e ano
+    query_base = """
+        SELECT 
+            regexp_extract(instituicao, 'Prefeitura Municipal (?:de|do|da) (.*) - [A-Z]{2}', 1) AS municipio,
+            ano_exercicio,
+            SUM(COALESCE(valor_pago, 0)) / MAX(populacao) AS cultura_per_capita
+        FROM dados_filtrados
+        WHERE nome_funcao = 'Cultura' AND populacao > 0
+        GROUP BY municipio, ano_exercicio
+    """
+
+    # separa Maceió e calcula a média das outras
+    query_final = f"""
+        WITH dados_base AS ({query_base})
+        
+        SELECT ano_exercicio, 'Maceió' AS grupo, cultura_per_capita 
+        FROM dados_base 
+        WHERE municipio = 'Maceió'
+        
+        UNION ALL
+        
+        SELECT ano_exercicio, 'Média das Demais Capitais' AS grupo, AVG(cultura_per_capita) 
+        FROM dados_base 
+        WHERE municipio != 'Maceió' 
+        GROUP BY ano_exercicio
+        
+        ORDER BY grupo, ano_exercicio;
+    """
+
+    return con.sql(query_final)
+
+
 tabela_filtrada(db.con).show()

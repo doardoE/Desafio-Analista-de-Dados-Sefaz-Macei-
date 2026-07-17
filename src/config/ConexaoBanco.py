@@ -7,7 +7,7 @@ class ConexaoBanco:
         self.con: duckdb.DuckDBPyConnection = duckdb.connect(
             database=paths.banco_dados,
         )
-    
+
     def close(self) -> None:
         if self.con is not None:
             self.con.close()

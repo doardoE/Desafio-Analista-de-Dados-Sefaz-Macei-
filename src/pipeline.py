@@ -1,6 +1,4 @@
 from pathlib import Path
-from src.config.Paths import paths
-from src.config.logs import configura_log
 from src.scripts.extract import extrair_dados
 from src.scripts.transform import transformar_dados_finbra
 from src.scripts.validate import validar_dataframe
@@ -56,4 +54,3 @@ def pipeline_principal(path_compactos: Path, path_extraidos: Path, path_processa
     logger.info(f"- Total de arquivos compactados encontrados: {len(list_path_compactos)}")
     logger.info(f"- Total de arquivos CSV extraídos: {len(list_path_extraidos)}")
     logger.info(f"- Total de linhas no dataframe validado: {len(df)}")
-

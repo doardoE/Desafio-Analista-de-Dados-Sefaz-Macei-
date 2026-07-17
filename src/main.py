@@ -1,7 +1,6 @@
 import logging
 import subprocess
 import sys
-from pathlib import Path
 
 from src.pipeline import pipeline_principal
 from src.deflacao.deflacao import cria_parquet_deflacionado
@@ -12,9 +11,19 @@ from src.config.logs import configura_log
 
 logger = logging.getLogger("main")
 
+
 def executar_notebook(path_notebooks, nome_arquivo) -> None:
     subprocess.run(
-        [sys.executable, "-m", "nbconvert", "--execute", str(path_notebooks / nome_arquivo), "--to", "notebook", "--inplace"],
+        [
+            sys.executable,
+            "-m",
+            "nbconvert",
+            "--execute",
+            str(path_notebooks / nome_arquivo),
+            "--to",
+            "notebook",
+            "--inplace",
+        ],
         capture_output=True,
         check=True,
     )

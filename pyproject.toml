@@ -16,7 +16,8 @@ dependencies = [
     "pytest",
     "ruff",
     "ipykernel",
-    "ipython"
+    "ipython",
+    "nbconvert"
 ]
 
 

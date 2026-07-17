@@ -1,7 +1,7 @@
 from src.query_exploratoria import anos_assiduos
 
 
-def cria_view_dados_filtrados(con):
+def cria_view_dados_analise_descritiva(con):
     funcoes_assiduas = ["Saúde", "Educação", "Cultura"]
     return con.sql(f"""
         CREATE OR REPLACE VIEW dados_filtrados AS SELECT

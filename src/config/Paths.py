@@ -30,6 +30,10 @@ class Paths:
     @property
     def banco_dados(self) -> Path:
         return self._root / "database.duckdb"
+    
+    @property
+    def notebooks(self) -> Path:
+        return self._root / "notebooks"
 
 
 paths = Paths()

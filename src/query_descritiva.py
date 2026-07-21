@@ -8,7 +8,9 @@ def cria_view_dados_analise_descritiva(con):
             instituicao,
             uf,
             ano_exercicio,
+            cod_funcao,
             nome_funcao,
+            cod_subfuncao,
             nome_subfuncao,
             populacao,
             SUM(CASE WHEN etapa_despesa = 'Despesas Empenhadas' THEN valor_real END) AS valor_empenhado,
@@ -19,7 +21,7 @@ def cria_view_dados_analise_descritiva(con):
         FROM finbra
         WHERE nome_funcao IN {funcoes_assiduas}
         AND ano_exercicio IN {anos_assiduos(con)}
-        GROUP BY instituicao, uf, ano_exercicio, nome_funcao, nome_subfuncao, populacao;
+        GROUP BY instituicao, uf, ano_exercicio, cod_funcao, nome_funcao, cod_subfuncao, nome_subfuncao, populacao;
     """)
 
 
@@ -36,6 +38,7 @@ def tabela_com_taxa_execucao(con):
                 SUM(valor_empenhado) AS total_empenhado,
                 SUM(valor_pago) AS total_pago
             FROM dados_filtrados
+            WHERE cod_subfuncao IS NULL
             GROUP BY ano_exercicio, nome_funcao
         )
         SELECT 
@@ -53,7 +56,8 @@ def obter_dados_pagamento_vs_divida(con):
     return con.sql("""
         WITH acumulado_capital AS (
             SELECT 
-                regexp_extract(instituicao, 'Prefeitura Municipal (?:de|do|da) (.*)', 1) AS municipio,
+                regexp_extract(instituicao, 'Prefeitura Municipal (?:de|do|da) (.*) - [A-Z]{2}', 1) AS municipio,
+                uf,
                 nome_funcao,
                 SUM(valor_empenhado) AS total_empenhado,
                 SUM(valor_pago) AS total_pago,
@@ -62,7 +66,8 @@ def obter_dados_pagamento_vs_divida(con):
                    COALESCE(valor_restos_a_pagar_processados, 0)
                 ) AS total_restos
             FROM dados_filtrados
-            GROUP BY municipio, nome_funcao
+            WHERE cod_subfuncao IS NULL
+            GROUP BY municipio, uf, nome_funcao
         )
         SELECT 
             municipio,
@@ -74,15 +79,17 @@ def obter_dados_pagamento_vs_divida(con):
     """)
 
 
-def obter_dados_cultura_per_capita(con):
+def obter_dados_funcao_per_capita(con, funcao: str):
     # calcula o gasto por habitante de cada cidade e ano
-    query_base = """
+    query_base = f"""
         SELECT 
-            regexp_extract(instituicao, 'Prefeitura Municipal (?:de|do|da) (.*) - [A-Z]{2}', 1) AS municipio,
+            regexp_extract(instituicao, 'Prefeitura Municipal (?:de|do|da) (.*) - [A-Z]{{2}}', 1) AS municipio,
             ano_exercicio,
-            SUM(COALESCE(valor_pago, 0)) / MAX(populacao) AS cultura_per_capita
+            SUM(COALESCE(valor_pago, 0)) / MAX(populacao) AS valor_per_capita
         FROM dados_filtrados
-        WHERE nome_funcao = 'Cultura' AND populacao > 0
+        WHERE nome_funcao = '{funcao}' AND populacao > 0
+        AND cod_funcao IS NOT NULL
+        AND cod_subfuncao IS NULL
         GROUP BY municipio, ano_exercicio
     """
 
@@ -90,13 +97,13 @@ def obter_dados_cultura_per_capita(con):
     query_final = f"""
         WITH dados_base AS ({query_base})
         
-        SELECT ano_exercicio, 'Maceió' AS grupo, cultura_per_capita 
+        SELECT ano_exercicio, 'Maceió' AS grupo, valor_per_capita
         FROM dados_base 
         WHERE municipio = 'Maceió'
         
         UNION ALL
         
-        SELECT ano_exercicio, 'Média das Demais Capitais' AS grupo, AVG(cultura_per_capita) 
+        SELECT ano_exercicio, 'Média das Demais Capitais' AS grupo, AVG(valor_per_capita) 
         FROM dados_base 
         WHERE municipio != 'Maceió' 
         GROUP BY ano_exercicio
@@ -107,16 +114,17 @@ def obter_dados_cultura_per_capita(con):
     return con.sql(query_final)
 
 
-def obter_dados_subfuncoes_cultura(con):
-    return con.sql("""
+def obter_dados_subfuncao(con, funcao: str):
+    return con.sql(f"""
         WITH valores_subfuncao AS (
             SELECT 
                 ano_exercicio,
+                nome_funcao,
                 nome_subfuncao,
                 SUM(COALESCE(valor_pago, 0)) AS valor_pago_subfuncao
             FROM dados_filtrados
-            WHERE nome_funcao = 'Cultura'
-            GROUP BY ano_exercicio, nome_subfuncao
+            WHERE nome_funcao = '{funcao}'
+            GROUP BY ano_exercicio, nome_funcao, nome_subfuncao
         )
         SELECT 
             ano_exercicio,
@@ -125,5 +133,6 @@ def obter_dados_subfuncoes_cultura(con):
             (valor_pago_subfuncao / SUM(valor_pago_subfuncao) OVER(PARTITION BY ano_exercicio)) * 100 AS participacao_percentual
         FROM valores_subfuncao
         WHERE valor_pago_subfuncao > 0
+        AND nome_subfuncao IS NOT NULL
         ORDER BY ano_exercicio, participacao_percentual DESC;
     """)

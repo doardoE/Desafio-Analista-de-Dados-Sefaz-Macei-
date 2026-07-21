@@ -63,7 +63,7 @@ def transformar_dados_finbra(list_path_arquivos: list, path_extraidos) -> pd.Dat
 
             # altera o tipo das colunas de função e subfunção para string e substitui "None" por None
             df["cod_funcao"] = df["cod_funcao"].astype("str").replace("None", None)
-            df["nome_funcao"] = df["nome_funcao"].astype("str").replace("None", None)
+            df["nome_funcao"] = df["nome_funcao"].where(df["nome_funcao"].notna(), None)
             df["cod_subfuncao"] = df["cod_subfuncao"].astype("str").replace("None", None)
             df["nome_subfuncao"] = df["nome_subfuncao"].astype("str").replace("None", None)
 

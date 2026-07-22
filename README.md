@@ -1,10 +1,10 @@
 # 📊 Análise Comparativa de Despesas por Função nas Capitais Brasileiras
 
-> 🎓 **Desafio de Estágio em Análise de Dados** | Sefaz Maceió (2026)
+🎓 **Desafio de Estágio em Análise de Dados** | Sefaz Maceió (2026)
 
-![Badges](https://img.shields.io/badge/Python-3.10%2B-blue?logo=python&logoColor=white) ![Status](https://img.shields.io/badge/Status-Ativo-brightgreen) ![License](https://img.shields.io/badge/License-MIT-green)
-
----
+![Python](https://img.shields.io/badge/Python-3.10%2B-blue?logo=python&logoColor=white) 
+![Status](https://img.shields.io/badge/Status-Ativo-brightgreen) 
+![License](https://img.shields.io/badge/License-MIT-green)
 
 ## 📑 Índice
 
@@ -16,251 +16,208 @@
 - [Deflação de Dados](#-deflação-de-dados)
 - [Análises Disponíveis](#-análises-disponíveis)
 - [Testes](#-testes)
-- [Contribuindo](#-contribuindo)
 - [Licença](#-licença)
+
 
 ## 🎯 Problema e Contexto
 
-Este projeto é uma solução para o **Desafio Técnico de Estágio em Análise de Dados** da [Sefaz Maceió](descricao_desafio.md).
+Este projeto é uma solução desenvolvida para o **Desafio Técnico de Estágio em Análise de Dados** da [Sefaz Maceió](descricao_desafio.md).
 
-O desafio consiste em analisar dados de **despesas das 26 capitais brasileiras** no período de **2020 a 2025**, publicados pelo **Siconfi** (Sistema de Contas Públicas do Tesouro Nacional). 
+O desafio consiste em analisar dados de **despesas das 26 capitais brasileiras** no período de **2020 a 2025**, publicados pelo **Siconfi** (Sistema de Informações Contábeis e Fiscais do Setor Público Brasileiro / Tesouro Nacional). 
 
-O objetivo principal é **comparar como as capitais gastam o dinheiro público por área (função)**, com foco na diferença entre o **empenhado** (reservado/comprometido) e o **pago** (efetivamente desembolsado).
+O objetivo principal é **comparar como as capitais alocam e gastam os recursos públicos por área (função)**, investigando especialmente as discrepâncias entre o **empenhado** (comprometido em orçamento) e o **pago** (efetivamente desembolsado).
 
-> 📌 Para contexto completo sobre os dados, requisitos e motivação do desafio, consulte o arquivo [descricao_desafio.md](descricao_desafio.md).
+> 📌 Para detalhes completos sobre as especificações, regras de negócio e motivação, consulte o arquivo [descricao_desafio.md](descricao_desafio.md).
 
----
 
 ## 🏗️ Arquitetura da Solução
 
-A solução segue o **padrão Medallion** de arquitetura de dados, dividindo o processamento em camadas claramente definidas:
+A solução adota o **Padrão Medallion** de arquitetura de dados, organizando o pipeline em camadas progressivas de qualidade, enriquecimento e consumo:
+
+```mermaid
+flowchart TD
+    A["📦 Dados Compactos (.zip)"] -->|"extract.py"| B["🟤 Camada Bronze<br><i>(CSVs Extraídos / Dados Brutos)</i>"]
+    B -->|"transform.py + validate.py"| C["🥈 Camada Silver<br><i>(Parquet Consolidado e Validado)</i>"]
+    C -->|"deflacao.py"| D["🥇 Camada Gold<br><i>(Parquet Deflacionado / Pronto pra Negócio)</i>"]
+    D --> E["🦆 DuckDB<br><i>(Banco Colunar em Memória)</i>"]
+    E --> F["📊 Análises SQL & Notebooks<br><i>(Insights e Visualizações)</i>"]
+
+    classDef zip fill:#f9f9f9,stroke:#666,stroke-width:1px,color:#333;
+    classDef bronze fill:#ebd0c2,stroke:#a05a2c,stroke-width:1px,color:#4a2810;
+    classDef silver fill:#e0e0e0,stroke:#757575,stroke-width:1px,color:#212121;
+    classDef gold fill:#fff3e0,stroke:#f57c00,stroke-width:1px,color:#e65100;
+    classDef duck fill:#fff59d,stroke:#fbc02d,stroke-width:1px,color:#f57f17;
+    classDef analytics fill:#e1f5fe,stroke:#0288d1,stroke-width:1px,color:#01579b;
+
+    class A zip;
+    class B bronze;
+    class C silver;
+    class D gold;
+    class E duck;
+    class F analytics;
 
 ```
-Dados Compactos (ZIP)
-       ↓
-    [extract.py]
-       ↓
-Dados Extraídos - Bronze
-(CSVs descompactados)
-       ↓
-    [transform.py]
-       ↓
-Dados Processados - Silver/Gold
-(Parquet consolidado e validado)
-       ↓
-    [validate.py]
-       ↓
-DuckDB (Banco em memória, colunar)
-       ↓
-Análises via SQL + Notebooks
-(Exploração, visualização, insights)
-```
 
+### 🔄 Fluxo de Processamento
+
+| Estágio | Script(s) | Entrada | Saída / Formato | Descrição |
+| --- | --- | --- | --- | --- |
+| **Ingestão** | `extract.py` | Arquivo `.zip` | **Bronze** (`.csv`) | Descompactação e carga bruta dos arquivos originais sem alteração. |
+| **Silver** | `transform.py` + `validate.py` | Camada Bronze | **Silver** (`.parquet`) | Limpeza, padronização, consolidação e validação de qualidade (Pandera). |
+| **Gold** | `deflacao.py` | Camada Silver | **Gold** (`.parquet`) | Ajuste inflacionário via IPCA e modelagem final para consumo analítico. |
+| **Carga** | N/A | Camada Gold | **DuckDB** | Ingestão e indexação dos arquivos Parquet no banco colunar em memória. |
+| **Consumo** | N/A | DuckDB | **SQL & Notebooks** | Consultas de alta performance, geração de métricas e visualizações. |
 
 ## 📁 Estrutura de Pastas
 
-```
+```text
 .
-├── README.md                          # Este arquivo
-├── pyproject.toml                     # Configuração do projeto (dependências, metadata)
-├── database.duckdb                    # Arquivo do banco DuckDB (criado após pipeline)
-├── dados_compactos/                   # Camada Raw: arquivos ZIP originais por ano
-│   ├── 2020/
-│   ├── 2021/
-│   ├── ...
-│   └── 2025/
+├── README.md                          # Documentação principal do projeto
+├── pyproject.toml                     # Dependências e metadados do projeto
+├── database.duckdb                    # Banco DuckDB (gerado após execução do pipeline)
+├── dados_compactos/                   # Camada Raw: arquivos ZIP originais organizados por ano
 ├── dados_extraidos/                   # Camada Bronze: CSVs descompactados
-│   ├── 2020/
-│   │   └── finbra.csv
-│   ├── 2021/
-│   │   └── finbra.csv
-│   └── ...
-├── dados_processados/                 # Camada Silver/Gold: dados validados e otimizados
-│   ├── finbra.parquet     # Consolidação de todos os CSVs (após transform)
-│   └── finbra_deflacionado.parquet    # Dados deflacionados (após deflação)
-├── notebooks/                         # Análises exploratórias e visualizações
+├── dados_processados/                 # Camadas Silver & Gold:
+│   ├── finbra.parquet                 # Consolidação dos CSVs (Silver)
+│   └── finbra_deflacionado.parquet    # Dados com ajuste inflacionário (Gold)
+├── notebooks/                         # Análises exploratórias e descritivas
 │   ├── analise_exploratoria.ipynb
-│   ├── analise_descritiva.ipynb
+│   └── analise_descritiva.ipynb
 ├── src/
-│   ├── pipeline.py                    # Orquestrador principal do ETL
-│   ├── query_exploratoria.py          # Queries SQL pré-definidas para exploração
+│   ├── main.py                        # Ponto de entrada / Orquestrador geral do projeto
+│   ├── pipeline.py                    # Pipeline principal ETL
+│   ├── query_exploratoria.py          # Queries SQL para exploração inicial
 │   ├── query_descritiva.py            # Queries SQL para análise descritiva
-│   ├── config/                        # Configurações centralizadas
-│   │   ├── ConexaoBanco.py            # Gerenciador de conexão DuckDB
-│   │   ├── DataFrameConfig.py         # Schemas e validação Pandera
-│   │   ├── Paths.py                   # Gerenciamento de caminhos
-│   │   ├── logs.py                    # Configuração de logs
-│   │   └── grafico.py                 # Funções auxiliares para visualização
-│   ├── scripts/                       # Scripts de processamento (ETL)
-│   │   ├── extract.py                 # Extração: descompacta ZIPs
-│   │   ├── transform.py               # Transformação: limpeza e consolidação em Parquet
-│   │   └── validate.py                # Validação: verifica integridade dos dados
-│   ├── deflacao/                      # Módulo de deflação
-│   │   ├── deflacao.py                # Lógica de deflação (pandas e DuckDB)
-│   │   └── ipca_utils.py              # Utilitários para consulta API SIDRA (IPCA)
-│   └── visualizacao/                  # Funções de geração de gráficos
+│   ├── config/                        # Módulos de configuração centralizada
+│   │   ├── ConexaoBanco.py            # Conexão e gerenciamento do DuckDB
+│   │   ├── DataFrameConfig.py         # Schemas Pandera e regras de qualidade
+│   │   ├── Paths.py                   # Gerenciamento dinâmico de caminhos
+│   │   ├── logs.py                    # Configuração centralizada de logging
+│   │   └── grafico.py                 # Utilities e temas para gráficos
+│   ├── scripts/                       # Etapas do pipeline (ETL)
+│   │   ├── extract.py                 # Extração dos ZIPs
+│   │   ├── transform.py               # Tratamento, limpeza e exportação Parquet
+│   │   └── validate.py                # Validação de dados com Pandera
+│   ├── deflacao/                      # Módulo de correção monetária
+│   │   ├── deflacao.py                # Lógica de ajuste (pandas/DuckDB)
+│   │   └── ipca_utils.py              # Integração com API SIDRA (IBGE)
+│   └── visualizacao/                  # Funções para plots e gráficos
 │       ├── bar_ranking_pagamento_divida.py
 │       ├── frequencia.py
 │       ├── linha_comparativo_cultura_per_capita.py
 │       ├── linha_comparativo_taxa_execucao.py
 │       ├── linha_deflacao.py
 │       └── linha_evolucao_subfuncoes_cultura.py
-└── tests/                             # Testes unitários (cobertura: happy path, alternative paths, sad path)
-    ├── test_extract.py                # Testes da extração
-    ├── test_transform.py              # Testes da transformação
-    ├── test_validate.py               # Testes da validação
-    └── test_pipeline.py               # Testes de integração do pipeline
+└── tests/                             # Suíte de testes unitários
+    ├── test_extract.py
+    ├── test_transform.py
+    ├── test_validate.py
+    └── test_pipeline.py
+
 ```
 
-### 🔧 Descrição dos Scripts Principais
+### 🔧 Responsabilidade dos Scripts Principais
 
 | Script | Responsabilidade |
-|--------|------------------|
-| **pipeline.py** | Orquestrador principal do ETL. Executa extract → transform → validate em sequência, gerenciando logs e tratamento de erros. |
-| **extract.py** | Percorre `dados_compactos/`, localiza arquivos ZIP por ano e os extrai para `dados_extraidos/`. |
-| **transform.py** | Lê cada CSV com tratamento correto de encoding, separador decimal e skip de linhas de metadados. Consolida tudo em um único DataFrame, cria colunas derivadas (ano, tipo de conta) e salva em Parquet. |
-| **validate.py** | Valida o Parquet consolidado com schemas Pandera, verificando tipos, valores nulos, ranges e regras de negócio. |
-| **query_exploratoria.py** / **query_descritiva.py** | Queries SQL pré-definidas armazenadas como templates, para reutilização consistente nos notebooks. |
+| --- | --- |
+| **`pipeline.py`** | Executa a sequência ETL (`extract` → `transform` → `validate` → `deflacao`), controlando exceções e logs. |
+| **`extract.py`** | Varre a pasta `dados_compactos/` e extrai os arquivos ZIP para a camada Bronze. |
+| **`transform.py`** | Aplica tratamento de encodings, conversão de tipos de dados, sanitização e unificação em arquivo Parquet. |
+| **`validate.py`** | Valida os schemas com **Pandera**, aplicando regras de integridade física e de negócio. |
+| **`deflacao.py`** | Consulta o IPCA via API SIDRA/IBGE e calcula a correção monetária dos valores históricos. |
 
----
 
 ## 💡 Decisões Técnicas
 
-### 1️⃣ Padrão Medallion (Bronze → Silver → Gold)
+### 1️⃣ Arquitetura Medallion (Bronze → Silver → Gold)
 
-O padrão Medallion organiza dados em camadas progressivas de qualidade e uso. Embora pequeno em escala, este padrão oferece:
+A separação em camadas garante:
 
-• **Separação clara de responsabilidades**: cada camada tem um propósito definido  
-• **Auditoria**: é possível rastrear transformações  
-• **Reutilização**: dados bronze podem ser consumidos por múltiplos pipelines
+* **Rastreabilidade e Auditabilidade**: Os dados brutos permanecem intactos na camada Bronze.
+* **Isolamento de Responsabilidade**: Erros na transformação não corrompem a ingestão original.
+* **Flexibilidade**: Novas regras de negócio podem ser reprocessadas a partir da camada Silver sem necessidade de re-extração.
 
-### 2️⃣ Parquet como Formato de Armazenamento
+### 2️⃣ Formato Parquet para Armazenamento
 
-Em vez de manter dados em CSV, utilizamos **Parquet** para a camada Silver/Gold:
+Em substituição ao CSV tradicional na Silver/Gold, o uso do **Parquet** oferece:
 
-• **Compressão**: reduz tamanho em disco (~80-90% menor que CSV)  
-• **Tipagem**: suporta tipos estruturados, garantindo consistência  
-• **Performance**: leitura colunar é muito mais rápida para consultas analíticas  
-• **Validação com Pandera**: schemas Parquet são validados contra regras de negócio
+* **Compressão Superior**: Redução de ~80-90% no tamanho em disco.
+* **Leitura Colunar**: Consultas SQL significativamente mais rápidas ao ler apenas as colunas necessárias.
+* **Preservação de Schemas**: Evita perda de tipos de dados (datas, numéricos) entre execuções.
 
 ### 3️⃣ Validação com Pandera
 
-Cada transformação é seguida de validação contra um schema Pandera que define:
+Antes da carga final, os dados passam por testes de contrato com Pandera:
 
-• Tipos de dados obrigatórios  
-• Ranges de valores (ex.: população > 0)  
-• Valores nulos permitidos/proibidos  
-• Regras de negócio (ex.: Pago ≤ Empenhado)
+* Tipagem forte de colunas.
+* Verificação de regras de negócio (ex: $Despesa\ Paga \le Despesa\ Empenhada$).
+* Tratamento preventivo de valores nulos e *outliers* inconsistentes.
 
-✅ Isso garante **qualidade de dados** antes de consumo em análises.
+### 4️⃣ DuckDB como Motor de Consultas
 
-### 4️⃣ DuckDB para Consultas Analíticas
+A escolha do **DuckDB** traz as seguintes vantagens:
 
-**Por que DuckDB, mesmo com poucos dados?**
+* **Embedded/Zero Overhead**: Não exige instalação de servidores de banco de dados pesados.
+* **Otimização OLAP**: Processamento colunar ideal para agregações analíticas complexas.
+* **Integração Direta com Parquet**: Permite executar SQL diretamente sobre os arquivos em disco ou memória.
 
-Embora os dados caibam na memória de qualquer computador moderno, a escolha do DuckDB é estratégica:
-
-• **Banco analítico colunar**: otimizado para agregações e filtros (não OLTP)  
-• **Em memória**: sem overhead de servidor externo  
-• **SQL padrão**: permite praticar e aprender SQL de forma prática  
-• **Objetivo pedagógico**: simular um ambiente de análise realista
-
-⚡ DuckDB carrega o Parquet uma única vez e permite múltiplas consultas sem reprocessamento.
-
-### 5️⃣ Notebooks para Exploração
-
-Os Jupyter Notebooks consomem dados via DuckDB usando SQL pré-definido em `query_exploratoria.py` e `query_descritiva.py`, gerando:
-
-• Análises exploratórias iniciais  
-• Gráficos dinâmicos (via Plotly, matplotlib, seaborn)  
-• Hipóteses e descobertas
-
-📊 Isso mantém separação clara entre **ETL** (scripts) e **análise** (notebooks).
-
----
 
 ## 🚀 Como Executar
 
 ### 📋 Pré-requisitos
 
-- ![Python Badge](https://img.shields.io/badge/Python-3.10%2B-blue?logo=python&logoColor=white) 
-- ![Git Badge](https://img.shields.io/badge/Git-Required-red?logo=git&logoColor=white)
+* **Python**: Versão 3.10 ou superior
+* **Git**
 
 ### Passo 1: Clonar o Repositório
 
 ```bash
-git clone <seu-repositorio>
-cd Desafio-Analista-de-Dados-Sefaz-Macei-
+git clone git@github.com:doardoE/Desafio-Analista-de-Dados-Sefaz-Macei-.git
+cd Desafio-Analista-de-Dados-Sefaz-Macei-.git
+
 ```
 
-### Passo 2: Criar e Ativar Ambiente Virtual
+### Passo 2: Criar e Ativar o Ambiente Virtual
 
 ```bash
 # Criar ambiente virtual
 python -m venv .venv
 
-# Ativar (Windows)
+# Ativar no Windows (PowerShell):
 .venv\Scripts\activate
 
-# Ativar (Linux/Mac)
+# Ativar no Linux / macOS:
 source .venv/bin/activate
 ```
 
 ### Passo 3: Instalar Dependências
 
 ```bash
-# Instala o projeto em modo editable com todas as dependências
 pip install -e .
 ```
 
-O arquivo `pyproject.toml` especifica todas as dependências necessárias:
+> 📦 *O comando acima instala o projeto no modo editável juntamente com as dependências especificadas no `pyproject.toml` (pandas, polars, duckdb, pandera, plotly, pytest, etc).*
 
-| Categoria | Bibliotecas | Finalidade |
-|-----------|------------|-----------|
-| 📊 **Dados** | pandas, polars | Manipulação de dados |
-| ✅ **Validação** | pandera | Validação de schemas |
-| 💾 **Armazenamento** | duckdb, pyarrow | Banco analítico e Parquet |
-| 📈 **Visualização** | plotly, matplotlib, seaborn | Gráficos e dashboards |
-| 🌐 **APIs** | requests | Consulta API SIDRA |
-| 🧪 **Testes** | pytest | Testes unitários |
-
-### Passo 4: Executar o Pipeline ETL
+### Passo 4: Executar o Pipeline Completo
 
 ```bash
-python src/pipeline.py
+python -m src.main
 ```
 
-**Este comando executa:**
+**O orquestrador executará sequencialmente:**
 
-1. 📦 Extrai todos os ZIPs de `dados_compactos/` → `dados_extraidos/`
-2. 🔀 Consolida CSVs em um único Parquet validado → `dados_processados/finbra_consolidado.parquet`
-3. 💾 Cria banco DuckDB → `database.duckdb`
-4. ✔️ Aplica validações e loga resultados
+1. 📦 Extração dos ZIPs em `dados_compactos/` $\rightarrow$ `dados_extraidos/`
+2. 🔀 Consolidação e limpeza $\rightarrow$ `dados_processados/finbra.parquet`
+3. ✔️ Validação de integridade via Pandera
+4. 📈 Cálculo de deflação (IPCA) $\rightarrow$ `dados_processados/finbra_deflacionado.parquet`
+5. 💾 Criação e população do banco analítico `database.duckdb`
 
-**Após execução bem-sucedida:**
-- ✅ `dados_processados/finbra_consolidado.parquet` (dados silver)
-- ✅ `database.duckdb` (banco carregado com os dados)
-
-### Passo 5: Executar Análises
-
-Abra os notebooks em Jupyter:
-
-```bash
-jupyter notebook notebooks/
-```
-
-**Recomenda-se começar por:**
-
-1. 🔍 `analise_exploratoria.ipynb` - exploração inicial dos dados
-2. 📊 `analise_descritiva.ipynb` - análises descritivas e descobertas
-
----
 
 ## 📊 Deflação de Dados
 
 ### Motivação
 
-> ⚠️ Comparar valores ao longo de múltiplos anos sem ajuste inflacionário leva a conclusões enganosas. Um gasto de R$ 1 milhão em 2020 tinha poder de compra diferente em 2025.
+⚠️ Comparar valores ao longo de múltiplos anos sem ajuste inflacionário leva a conclusões enganosas. Um gasto de R$ 1 milhão em 2020 tinha poder de compra diferente em 2025.
 
 ### Implementação
 
@@ -281,7 +238,7 @@ Mantemos **dois arquivos Parquet separados**:
 
 | Arquivo | Conteúdo |
 |---------|----------|
-| `finbra_consolidado.parquet` | Valores nominais originais (sem deflação) |
+| `finbra.parquet` | Valores nominais originais (sem deflação) |
 | `finbra_deflacionado.parquet` | Valores em moeda constante (ex.: 2025) |
 
 **Razões para esta abordagem:**
@@ -291,72 +248,48 @@ Mantemos **dois arquivos Parquet separados**:
 3. 🔄 **Reprodutibilidade**: mudanças futuras na metodologia não perdem histórico
 4. 🛡️ **Boas práticas**: não mutamos dados raw (imutabilidade de dados)
 
----
 
 ## 📈 Análises Disponíveis
 
-Os notebooks executam análises explorando diferentes ângulos:
+Os resultados e visualizações encontram-se estruturados nos Jupyter Notebooks na pasta `notebooks/`:
 
-### [analise_exploratoria.ipynb](notebooks/analise_exploratoria.ipynb) 🔍
+### 🔍 [analise_exploratoria.ipynb](/notebooks/analise_exploratoria.ipynb)
 
-**Exploração inicial dos dados:**
-- Dimensões do dataset (quantas capitais, anos, funções)
-- Distribuição de despesas por função
-- Completude de dados por ano
-- Outliers e padrões iniciais
+* Verificação de dimensões, cardinalidade e cobertura temporal do dataset.
+* Mapeamento da completude dos dados por município.
+* Distribuição geral das despesas por função orçamentária.
 
-### [analise_descritiva.ipynb](notebooks/analise_descritiva.ipynb) 📊
+### 📊 [analise_descritiva.ipynb](/notebooks/analise_descritiva.ipynb)
 
-**Análises descritivas focadas no desafio:**
+* **Taxa de Execução Financeira**: Avaliação do percentual efetivamente pago frente ao empenhado:
 
-- **Taxa de Execução Financeira**: `(Despesas Pagas / Despesas Empenhadas) × 100`
-  - Qual capital cumpre melhor suas empenhos?
-  - Em quais funções há mais atraso (restos a pagar)?
+$$\text{Taxa de Execução (\%)} = \left(\frac{\text{Despesas Pagas}}{\text{Despesas Empenhadas}}\right) \times 100$$
 
-- **Per Capita**: gasto por habitante por função
-  - Comparação justa entre capitais de tamanhos diferentes
 
-- **Evolução Temporal**: tendências 2020-2024
-  - Crescimento/redução de gastos por função
-  - Impacto de mudanças políticas ou crises
-
-- **Análise por Subfunção**: detalhamento dentro de funções principais
-  - Ex.: dentro de Saúde, quanto vai para Atenção Básica?
-
-📈 **Visualizações**: rankings, evoluções temporais, comparativos per capita e heatmaps de execução
-
----
+* **Restos a Pagar**: Relação de compromissos pendentes assumidos pelas capitais.
+* **Gasto Per Capita**: Análise normalizada por tamanho populacional das capitais.
+* **Destaque Regional**: Análise comparativa focada em Maceió em relação à média das capitais brasileiras.
 
 ## ✅ Testes
 
-O projeto inclui testes unitários em `tests/`:
-
-### 🧪 Cobertura de Testes
-
-- ✅ **Happy Path**: fluxo normal, dados válidos, saída esperada
-- 🔄 **Alternative Paths**: variações válidas (ex.: arquivo vazio, ano com dados parciais)
-- ❌ **Sad Path**: erros esperados (ex.: arquivo corrompido, encoding inválido, schema violado)
-
-### 🏃 Executar Testes
+A suíte de testes unitários e de integração garante a confiabilidade do pipeline.
 
 ```bash
-# Todos os testes
-pytest tests/
-
-# Com cobertura
-pytest tests/ --cov=src
+# Executar todos os testes
+pytest
 ```
 
-### 📝 Arquivos de Teste
+```bash
+# Executar testes com relatório de cobertura
+pytest --cov=src
+```
 
-- 📦 `test_extract.py`: valida descompactação de ZIPs e localização de arquivos
-- 🔀 `test_transform.py`: valida leitura de CSVs com encoding/decimal corretos, consolidação e geração de colunas derivadas
-- ✔️ `test_validate.py`: valida schemas Pandera e regras de negócio
-- 🔗 `test_pipeline.py`: testes de integração do fluxo completo
+### 🧪 Cobertura dos Testes (`tests/`)
 
-
----
+* **Happy Path**: Validação do fluxo correto com entradas válidas.
+* **Alternative Paths**: Tratamento de exceções leves (ex: estruturas de diretórios não criadas, dados parciais).
+* **Sad Path**: Resposta a falhas críticas (ex: arquivos corrompidos, divergência grave de schema, encoding inválido).
 
 ## 📜 Licença
 
-Projeto desenvolvido como solução para o Desafio Técnico de Estágio em Análise de Dados - Sefaz Maceió (2026).
+Este projeto foi desenvolvido como solução para o Desafio Técnico de Estágio em Análise de Dados da **Sefaz Maceió (2026)** e é distribuído sob a licença MIT.

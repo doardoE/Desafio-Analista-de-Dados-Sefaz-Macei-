@@ -14,6 +14,7 @@ dependencies = [
     "matplotlib",
     "seaborn",
     "pytest",
+    "pytest-cov",
     "ruff",
     "ipykernel",
     "ipython",
@@ -48,3 +49,9 @@ extend-include = ["*.ipynb"]
 [tool.pytest.ini_options]
 # Define raiz para importações nos arquivos de teste
 pythonpath = ["."]
+
+[tool.coverage.run]
+# define omições para a cobertura de testes
+omit = [
+    "src/query_*.py",
+]

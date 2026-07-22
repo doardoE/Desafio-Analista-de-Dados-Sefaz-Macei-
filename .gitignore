@@ -26,6 +26,7 @@ venv/
 env/
 .python-version
 .ipynb_checkpoints/
+.coverage
 
 # --- Editores / IDEs ------------------------------------------------------
 .vscode/
